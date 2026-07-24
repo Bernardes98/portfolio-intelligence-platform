@@ -45,9 +45,12 @@ public class AnalysisService {
                 .toList();
     }
 
-    private PortfolioAnalysis getEntity(UUID analysisId) {
+    @Transactional(readOnly = true)
+    public PortfolioAnalysis getEntity(UUID analysisId) {
         return analysisRepository.findById(analysisId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Portfolio analysis not found with id: " + analysisId));
+                        "Portfolio analysis not found with id: "
+                                + analysisId
+                ));
     }
 }

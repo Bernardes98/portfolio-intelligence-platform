@@ -7,11 +7,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 @Entity
 @Table(name = "portfolio_analyses")
 public class PortfolioAnalysis {
@@ -33,7 +36,12 @@ public class PortfolioAnalysis {
     @Column(name = "total_assets", nullable = false)
     private int totalAssets;
 
-    @Column(name = "total_portfolio_value", nullable = false, precision = 19, scale = 4)
+    @Column(
+            name = "total_portfolio_value",
+            nullable = false,
+            precision = 19,
+            scale = 4
+    )
     private BigDecimal totalPortfolioValue;
 
     @Column(name = "error_message", length = 1000)
@@ -62,46 +70,42 @@ public class PortfolioAnalysis {
 
     @PrePersist
     void onCreate() {
-        this.createdAt = Instant.now();
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
     }
 
-    public UUID getId() {
-        return id;
+    public boolean acceptsDocumentUpload() {
+        return status == AnalysisStatus.CREATED
+                || status == AnalysisStatus.DOCUMENTS_UPLOADED;
     }
 
-    public UUID getClientId() {
-        return clientId;
-    }
+    public void registerUploadedDocuments(
+            int uploadedDocuments,
+            int maxDocuments
+    ) {
+        if (!acceptsDocumentUpload()) {
+            throw new IllegalStateException(
+                    "A análise não aceita novos documentos."
+            );
+        }
 
-    public AnalysisStatus getStatus() {
-        return status;
-    }
+        if (uploadedDocuments <= 0) {
+            throw new IllegalArgumentException(
+                    "A quantidade de documentos deve ser maior que zero."
+            );
+        }
 
-    public int getTotalDocuments() {
-        return totalDocuments;
-    }
+        int updatedTotal = totalDocuments + uploadedDocuments;
 
-    public int getTotalAssets() {
-        return totalAssets;
-    }
+        if (updatedTotal > maxDocuments) {
+            throw new IllegalStateException(
+                    "O limite máximo de documentos foi excedido."
+            );
+        }
 
-    public BigDecimal getTotalPortfolioValue() {
-        return totalPortfolioValue;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getStartedAt() {
-        return startedAt;
-    }
-
-    public Instant getCompletedAt() {
-        return completedAt;
+        this.totalDocuments = updatedTotal;
+        this.status = AnalysisStatus.DOCUMENTS_UPLOADED;
+        this.errorMessage = null;
     }
 }

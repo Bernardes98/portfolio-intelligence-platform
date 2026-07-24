@@ -4,3 +4,6 @@
 **/build/
 .env
 storage/
+# Uploaded investment reports
+storage/
+backend/storage/

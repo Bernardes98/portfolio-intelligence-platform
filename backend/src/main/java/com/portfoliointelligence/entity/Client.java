@@ -6,10 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 @Entity
 @Table(name = "clients")
 public class Client {
@@ -53,29 +55,5 @@ public class Client {
     @PreUpdate
     void onUpdate() {
         this.updatedAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getDocumentNumber() {
-        return documentNumber;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 }
