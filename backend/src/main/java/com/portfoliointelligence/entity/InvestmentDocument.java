@@ -17,6 +17,8 @@ import java.util.UUID;
 @Table(name = "investment_documents")
 public class InvestmentDocument {
 
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 1000;
+
     @Id
     @Column(nullable = false, updatable = false)
     private UUID id;
@@ -72,8 +74,17 @@ public class InvestmentDocument {
     )
     private Instant createdAt;
 
+    @Column(name = "processing_started_at")
+    private Instant processingStartedAt;
+
     @Column(name = "processed_at")
     private Instant processedAt;
+
+    @Column(
+            name = "processing_attempts",
+            nullable = false
+    )
+    private int processingAttempts;
 
     protected InvestmentDocument() {
     }
@@ -97,10 +108,79 @@ public class InvestmentDocument {
         this.fileSize = fileSize;
         this.checksum = checksum;
         this.status = DocumentStatus.UPLOADED;
+        this.processingAttempts = 0;
     }
 
     @PrePersist
     void onCreate() {
-        this.createdAt = Instant.now();
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
+
+    public boolean canBeQueued() {
+        return status == DocumentStatus.UPLOADED
+                || status == DocumentStatus.FAILED;
+    }
+
+    public void queue() {
+        if (!canBeQueued()) {
+            throw new IllegalStateException(
+                    "O documento não pode ser colocado na fila "
+                            + "quando está com status " + status + "."
+            );
+        }
+
+        this.status = DocumentStatus.QUEUED;
+        this.errorMessage = null;
+        this.processingStartedAt = null;
+        this.processedAt = null;
+    }
+
+    public void startProcessing() {
+        if (status != DocumentStatus.QUEUED) {
+            throw new IllegalStateException(
+                    "Somente documentos na fila podem ser processados."
+            );
+        }
+
+        this.status = DocumentStatus.PROCESSING;
+        this.processingStartedAt = Instant.now();
+        this.processingAttempts++;
+        this.errorMessage = null;
+    }
+
+    public void markProcessed() {
+        if (status != DocumentStatus.PROCESSING) {
+            throw new IllegalStateException(
+                    "Somente documentos em processamento "
+                            + "podem ser concluídos."
+            );
+        }
+
+        this.status = DocumentStatus.PROCESSED;
+        this.processedAt = Instant.now();
+        this.errorMessage = null;
+    }
+
+    public void markFailed(String message) {
+        this.status = DocumentStatus.FAILED;
+        this.processedAt = Instant.now();
+        this.errorMessage = truncate(message);
+    }
+
+    private String truncate(String message) {
+        if (message == null || message.isBlank()) {
+            return "Erro desconhecido durante o processamento.";
+        }
+
+        if (message.length() <= MAX_ERROR_MESSAGE_LENGTH) {
+            return message;
+        }
+
+        return message.substring(
+                0,
+                MAX_ERROR_MESSAGE_LENGTH
+        );
     }
 }

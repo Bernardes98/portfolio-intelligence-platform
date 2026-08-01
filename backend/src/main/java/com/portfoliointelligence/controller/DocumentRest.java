@@ -1,6 +1,8 @@
 package com.portfoliointelligence.controller;
 
 import com.portfoliointelligence.dto.DocumentResponse;
+import com.portfoliointelligence.dto.DocumentExtractionResponse;
+import com.portfoliointelligence.service.DocumentExtractionService;
 import com.portfoliointelligence.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,11 +34,14 @@ import java.util.UUID;
 public class DocumentRest {
 
     private final DocumentService documentService;
+    private final DocumentExtractionService extractionService;
 
     public DocumentRest(
-            DocumentService documentService
+            DocumentService documentService,
+            DocumentExtractionService extractionService
     ) {
         this.documentService = documentService;
+        this.extractionService = extractionService;
     }
 
     @PostMapping(
@@ -111,6 +116,34 @@ public class DocumentRest {
     ) {
         return documentService.findByAnalysis(
                 analysisId
+        );
+    }
+
+    @GetMapping("/{documentId}/extraction")
+    @Operation(
+            summary = "Consultar texto extraído",
+            description = """
+                Retorna a instituição identificada, quantidade
+                de páginas e uma prévia do texto extraído.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Extração localizada"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Documento ou extração não encontrada"
+            )
+    })
+    public DocumentExtractionResponse findExtraction(
+            @PathVariable UUID analysisId,
+            @PathVariable UUID documentId
+    ) {
+        return extractionService.find(
+                analysisId,
+                documentId
         );
     }
 }

@@ -5,6 +5,7 @@ import com.portfoliointelligence.exception.FileStorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -69,15 +70,38 @@ public class LocalFileStorageService
             );
         } catch (IOException exception) {
             throw new FileStorageException(
-                    "Could not store the uploaded document.",
+                    "Não foi possível armazenar o documento.",
                     exception
             );
         }
     }
 
     @Override
+    public Path resolve(String storagePath) {
+        if (!StringUtils.hasText(storagePath)) {
+            throw new FileStorageException(
+                    "O caminho do documento não foi informado."
+            );
+        }
+
+        Path targetPath = storageRoot
+                .resolve(Path.of(storagePath))
+                .normalize();
+
+        validateTargetPath(targetPath);
+
+        if (!Files.isRegularFile(targetPath)) {
+            throw new FileStorageException(
+                    "O arquivo armazenado não foi encontrado."
+            );
+        }
+
+        return targetPath;
+    }
+
+    @Override
     public void delete(String storagePath) {
-        if (storagePath == null || storagePath.isBlank()) {
+        if (!StringUtils.hasText(storagePath)) {
             return;
         }
 
@@ -91,7 +115,7 @@ public class LocalFileStorageService
             Files.deleteIfExists(targetPath);
         } catch (IOException exception) {
             LOGGER.warn(
-                    "Could not delete stored file: {}",
+                    "Não foi possível excluir o arquivo: {}",
                     targetPath,
                     exception
             );
@@ -101,7 +125,7 @@ public class LocalFileStorageService
     private void validateTargetPath(Path targetPath) {
         if (!targetPath.startsWith(storageRoot)) {
             throw new FileStorageException(
-                    "Invalid file storage path."
+                    "Caminho de armazenamento inválido."
             );
         }
     }
