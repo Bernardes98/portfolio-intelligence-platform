@@ -17,7 +17,9 @@ public record DocumentResponse(
         DocumentStatus status,
         String errorMessage,
         Instant createdAt,
-        Instant processedAt
+        Instant processingStartedAt,
+        Instant processedAt,
+        int processingAttempts
 
 ) {
 
@@ -34,7 +36,9 @@ public record DocumentResponse(
                 document.getStatus(),
                 document.getErrorMessage(),
                 document.getCreatedAt(),
-                document.getProcessedAt()
+                document.getProcessingStartedAt(),
+                document.getProcessedAt(),
+                document.getProcessingAttempts()
         );
     }
 }

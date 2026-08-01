@@ -2,6 +2,7 @@ package com.portfoliointelligence.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.util.UUID;
 
 public interface FileStorageService {
@@ -11,6 +12,8 @@ public interface FileStorageService {
             UUID documentId,
             MultipartFile file
     );
+
+    Path resolve(String storagePath);
 
     void delete(String storagePath);
 
